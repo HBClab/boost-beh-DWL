@@ -34,7 +34,7 @@ def get_met():
 
     # Get the current timestamp
     current_time = datetime.now().timestamp() * 1000  # Convert to milliseconds
-    one_day_ago = current_time - (24 * 60 * 60 * 1000)  # 24 hours ago in milliseconds
+    one_day_ago = current_time - 5*(24 * 60 * 60 * 1000)  # 24 hours ago in milliseconds
 
     # Initialize an empty list to store study result IDs
     study_result_ids = []
@@ -145,12 +145,18 @@ def convert_beh():
 
 
     paths = []
+    print(dic)
     for i in range(len(dic)):
         i += 1
         for sub in np.unique(dic[i]['subject_id']):
             print(sub)
-            paths.append((f'./data/{sub}/processed'+"/{0}_{1}_{2}"+".csv").format(sub,dic[i]['task'][0],dic[i]['task_vers'][0]))
-        
+            if os.path.exists(f'./data/{sub}/processed/run-1'):
+                paths.append((f'./data/{sub}/processed/run-2'+"/{0}_{1}_{2}"+".csv").format(sub,dic[i]['task'][0],dic[i]['task_vers'][0]))
+            elif os.path.exists(f'./data/{sub}/processed/run-2'):
+                paths.append((f'./data/{sub}/processed/run-1'+"/{0}_{1}_{2}"+".csv").format(sub,dic[i]['task'][0],dic[i]['task_vers'][0]))
+            else:
+                paths.append((f'./data/{sub}/processed/run-1'+"/{0}_{1}_{2}"+".csv").format(sub,dic[i]['task'][0],dic[i]['task_vers'][0]))
+            
 
 
         for path in paths:
@@ -197,7 +203,7 @@ def move_txt(txt_files):
 
 
 def push():
-
+    subprocess.run(["git","remote", "set-url", "https://github.com/HBClab/boost-beh-AF.git"])
     subprocess.run(["git", "add", "-A"])
     subprocess.run(["git", "commit", "-m", "auto commit -> added subject task data"])
     subprocess.run(["git", "push"])

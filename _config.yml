@@ -1,0 +1,14 @@
+title: "Boost Behavioral Data -> DWL"
+description: "A blog showcasing various subjects post-QC."
+baseurl: "/boost-beh-DWL" # If your site is at https://username.github.io, leave it empty. If at https://username.github.io/repo-name, set it to "/repo-name"
+url: "https://hbclab.github.io" # Replace with your GitHub Pages URL
+logo: https://avatars0.githubusercontent.com/u/24659915?s=400&u=12a4f626488fe0f692d77f355d9dd9f3e4e63f7a&v=4
+repository: "HBClab/boost-beh-DWL" # Replace with your GitHub repository in "owner/re
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-github-metadata
+include:
+  - data
+
+theme: minima
