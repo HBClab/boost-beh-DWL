@@ -96,6 +96,8 @@ jobs:
           python -m pip install --upgrade pip
 
       - name: Run Quality Control Script
+        env:
+          TEASE: ${{ secrets.TEASE }}
         run: |
           sub=${{ needs.process_raw.outputs.sub }}
           task=${{ needs.process_raw.outputs.task }}
