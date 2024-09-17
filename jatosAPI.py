@@ -11,7 +11,7 @@ import subprocess
 # jap_5ThOJ14yf7z1EPEUpAoZYMWoETZcmJk305719
 
 def get_met():
-    tease = os.environ['TEASE']
+    tease = os.getenv['TEASE']
 
     proxies = {
     'http': f'http:zjgilliam:{tease}//proxy.divms.uiowa.edu:8888',
@@ -61,7 +61,7 @@ def get_met():
     return study_result_ids
 
 def get_data(study_result_ids):
-    tease = os.environ['TEASE']
+    tease = os.getenv['TEASE']
 
     proxies = {
     'http': f'http:zjgilliam:{tease}//proxy.divms.uiowa.edu:8888',
