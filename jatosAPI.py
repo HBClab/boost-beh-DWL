@@ -223,15 +223,16 @@ def move_txt(txt_files):
 
 
 
+def push(toke):
+    #use the folder name as task
+    task = os.path.basename(os.getcwd())
 
-def push():
-    import git 
-    repo = git.Repo('./')
-    repo.git.add('.')
-    repo.git.commit('-m', 'new data')
-    origin = repo.remote(name='origin')
-    origin.push()
-    return None
+    subprocess.run(['git', 'config', 'user.email', 'miloswrath@users.noreply.github.com'])
+    subprocess.run(['git', 'remote', 'set-url', 'origin', f'https://miloswrath:{toke}@github.com/HBClab/{task}'])
+    subprocess.run(['git', 'config', 'user.name', 'miloswrath'])
+    subprocess.run(['git', 'add', '.'])
+    subprocess.run(['git', 'commit', '-m', 'Automated Commit -> New Data'])
+    subprocess.run(['git', 'push', 'origin', 'main'])
 
 def main():
     args = parse_cmd()
