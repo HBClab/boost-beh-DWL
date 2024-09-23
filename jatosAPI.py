@@ -15,6 +15,7 @@ def parse_cmd():
     import argparse
     parser = argparse.ArgumentParser(description='API File to Pull Subject Data from Jatos')
     parser.add_argument('-t', type=str, help='TEASE')
+    parser.add_argument('-a', type=str, help="toke")
     return parser.parse_args()
 
 
@@ -237,6 +238,7 @@ def push(toke):
 def main():
     args = parse_cmd()
     tease = args.t
+    toke = args.a
     study_result_ids = get_met(tease)
     get_data(study_result_ids, tease)
     convert_beh()
@@ -246,8 +248,7 @@ def main():
             if file.endswith(".txt"):
                 txt_files.append(os.path.join(root, file))
     move_txt(txt_files)
-    push()
-
+    push(toke)
 
 
 
