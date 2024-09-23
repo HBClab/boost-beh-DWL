@@ -226,6 +226,9 @@ def move_txt(txt_files):
 
 def push():
     subprocess.run(["git","remote", "set-url", "https://github.com/HBClab/boost-beh-AF.git"])
+    subprocess.run(["git", "config", "--global", "user.email", "miloswrath@users.noreply.github.com"])
+    subprocess.run(["git", "config", "--global", "user.name", "miloswrath"])
+    subprocess.run(["git", "config", "--global", "user.password", "Milocute23"])
     subprocess.run(["git", "add", "-A"])
     subprocess.run(["git", "commit", "-m", "auto commit -> added subject task data"])
     subprocess.run(["git", "push"])
