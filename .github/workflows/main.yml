@@ -29,17 +29,23 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Get Changed CSV Files
-        run: |
-          #!/bin/bash
+run: |
+  #!/bin/bash
 
-          # Get the list of CSV files changed in the last 24 hours
-          data=$(git log --since="24 hours ago" --name-only --pretty=format: -- '*.csv' | sort | uniq)
+  # Get the list of CSV files changed in the last 24 hours
+  data=$(git log --since="24 hours ago" --name-only --pretty=format: -- '*.csv' | sort | uniq)
 
-          # Export the data variable to the environment
-          echo "data=$data" >> $GITHUB_ENV
+  # Convert the list into a multi-line format
+  formatted_data=$(echo "$data" | tr ' ' '\n')
 
-          # Print the changed CSV files
-          echo "Changed CSV files in the last 24 hours: $data"
+  # Export the formatted data variable to the environment
+  echo "data<<EOF" >> $GITHUB_ENV
+  echo "$formatted_data" >> $GITHUB_ENV
+  echo "EOF" >> $GITHUB_ENV
+
+  # Print the changed CSV files
+  echo "Changed CSV files in the last 24 hours:"
+  echo "$formatted_data"
 
 
       - name: Install Python Dependencies
