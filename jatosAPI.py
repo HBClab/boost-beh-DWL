@@ -24,7 +24,7 @@ def get_met(tease):
 
     proxies = {
     'http': f'http:zjgilliam:{tease}@proxy.divms.uiowa.edu:8888',
-    'https': f'https://zjgilliam:{tease}@proxy.divms.uiowa.edu:8888',
+    'https': f'http://zjgilliam:{tease}@proxy.divms.uiowa.edu:8888',
     }
 
     url = 'https://jatos.psychology.uiowa.edu/jatos/api/v1/results/metadata'
@@ -75,7 +75,7 @@ def get_data(study_result_ids, tease):
 
     proxies = {
     'http': f'http:zjgilliam:{tease}@proxy.divms.uiowa.edu:8888',
-    'https': f'https://zjgilliam:{tease}@proxy.divms.uiowa.edu:8888',
+    'https': f'http://zjgilliam:{tease}@proxy.divms.uiowa.edu:8888',
     }
     headers = {
         'accept': 'application/octet-stream',
