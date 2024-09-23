@@ -15,6 +15,7 @@ def parse_cmd():
     import argparse
     parser = argparse.ArgumentParser(description='API File to Pull Subject Data from Jatos')
     parser.add_argument('-t', type=str, help='TEASE')
+    return parser.parse_cmd()
 
 
 
