@@ -189,7 +189,6 @@ def convert_beh():
 
     return paths
 
-
 def move_txt(txt_files):
     dic = {}
     for file_path in txt_files:
@@ -205,18 +204,20 @@ def move_txt(txt_files):
             print(sub)
             target_dir = f'./data/{sub}/raw'
             os.makedirs(target_dir, exist_ok=True)
-            # Save the DataFrame to a CSV file in the target directory
+            # Save the DataFrame to a text file in the target directory
             output_file = os.path.join(target_dir, os.path.basename(file_path))
-            # save df as a txt file to target dir
             with open(output_file, 'w') as f:
                 f.write(df.to_string(index=False))
             print(f"Saved {output_file} to {target_dir}")
         os.remove(file_path)
         print(f"Removed {file_path}")
-        # remove any dirs in data/raw
-        for root, dirs, files in os.walk('./data/raw'):
-            for d in dirs:
-                shutil.rmtree(os.path.join(root, d))
+
+    # Move the directory removal outside the loop
+    for root, dirs, files in os.walk('./data/raw'):
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+    # Optionally, remove the raw directory itself
+    os.rmdir('./data/raw')
 
     return None
 
