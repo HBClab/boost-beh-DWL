@@ -19,10 +19,7 @@ jobs:
     name: Process Raw CSV Files
     runs-on: self-hosted
     outputs:
-      sub: ${{ steps.set_vars.outputs.sub }}
-      task: ${{ steps.set_vars.outputs.task }}
-      version: ${{ steps.set_vars.outputs.version }}
-      run_part: ${{ steps.set_vars.outputs.run_part }}
+      data: ${{ steps.set_vars.outputs.json }}
 
     steps:
       - name: Checkout Code
@@ -47,14 +44,13 @@ jobs:
           echo "Changed CSV files in the last 24 hours:"
           echo "$formatted_data"
 
-
-      - name: Install Python Dependencies
-        run: |
-          python -m pip install --upgrade pip
-
       - name: Parse Raw CSV Files
         id: set_vars
         run: |
+          # Initialize an empty JSON array
+          json_array="["
+          first_item=true
+
           # Loop through each CSV file in $data
           for file in $data; do
               # Extract the directory and filename
@@ -68,11 +64,22 @@ jobs:
               IFS='_' read -r sub task version <<< "$filename"
               version="${version%.csv}"  # Remove the .csv extension from version
 
-              # Set outputs
-              echo "::set-output name=run_part::$run_part"
-              echo "::set-output name=sub::$sub"
-              echo "::set-output name=task::$task"
-              echo "::set-output name=version::$version"
+              # Escape variables for JSON
+              sub_escaped=$(printf '%s' "$sub" | sed 's/"/\\"/g')
+              task_escaped=$(printf '%s' "$task" | sed 's/"/\\"/g')
+              version_escaped=$(printf '%s' "$version" | sed 's/"/\\"/g')
+              run_part_escaped=$(printf '%s' "$run_part" | sed 's/"/\\"/g')
+
+              # Build JSON object
+              json_object="{\"sub\":\"$sub_escaped\",\"task\":\"$task_escaped\",\"version\":\"$version_escaped\",\"run_part\":\"$run_part_escaped\"}"
+
+              # Append to JSON array
+              if [ "$first_item" = true ]; then
+                  json_array="$json_array$json_object"
+                  first_item=false
+              else
+                  json_array="$json_array,$json_object"
+              fi
 
               # Print the extracted values
               echo "Run Part: $run_part"
@@ -81,10 +88,18 @@ jobs:
               echo "Version: $version"
           done
 
+          json_array="$json_array]"
+
+          # Output the JSON array
+          echo "json=$json_array" >> $GITHUB_OUTPUT
+
   run_qc:
     name: Run Quality Control
     runs-on: self-hosted
     needs: process_raw
+    strategy:
+      matrix:
+        config: ${{ fromJson(needs.process_raw.outputs.data) }}
 
     steps:
       - name: Checkout Code
@@ -92,10 +107,10 @@ jobs:
 
       - name: Debug Environment Variables
         run: |
-          echo "Subject: ${{ needs.process_raw.outputs.sub }}"
-          echo "Task: ${{ needs.process_raw.outputs.task }}"
-          echo "Version: ${{ needs.process_raw.outputs.version }}"
-          echo "Run Part: ${{ needs.process_raw.outputs.run_part }}"
+          echo "Subject: ${{ matrix.config.sub }}"
+          echo "Task: ${{ matrix.config.task }}"
+          echo "Version: ${{ matrix.config.version }}"
+          echo "Run Part: ${{ matrix.config.run_part }}"
 
       - name: Install Python Dependencies
         run: |
@@ -105,39 +120,73 @@ jobs:
         env:
           TEASE: ${{ secrets.TEASE }}
         run: |
-          sub=${{ needs.process_raw.outputs.sub }}
-          task=${{ needs.process_raw.outputs.task }}
-          vers=${{ needs.process_raw.outputs.version }}
-          run_part=${{ needs.process_raw.outputs.run_part }}
+          sub=${{ matrix.config.sub }}
+          task=${{ matrix.config.task }}
+          vers=${{ matrix.config.version }}
+          run_part=${{ matrix.config.run_part }}
 
-          for sub in ${sub}; do
-            echo "Processing subject: $sub"
-            for task in ${task}; do
-              echo "Processing task: $task"
-              for vers in ${vers}; do
-                echo "Processing version: $vers"
-                csv_file="./data/${sub}/processed/${run_part}/${sub}_${task}_${vers}.csv"
-                mkdir -p "./data/${sub}/${run_part}"
-                log_file="./data/${sub}/${run_part}/qc_${task}_${vers}.log"
-                echo "CSV file: $csv_file"
-                echo "Log file: $log_file"
-                if [ -f "$csv_file" ]; then
-                  python ./code/DWLqC.py -s "$csv_file" -o "./data/${sub}/${run_part}" -sub "$sub" | tee "$log_file"
-                  echo "QC for ${sub}_${task}_${vers} completed"
-                else
-                  echo "CSV file $csv_file does not exist"
-                fi
-              done
-            done
+          echo "Processing subject: $sub"
+          echo "Processing task: $task"
+          echo "Processing version: $vers"
+          csv_file="./data/${sub}/processed/${run_part}/${sub}_${task}_${vers}.csv"
+          mkdir -p "./data/${sub}/${run_part}"
+          log_file="./data/${sub}/${run_part}/qc_${task}_${vers}.log"
+          echo "CSV file: $csv_file"
+          echo "Log file: $log_file"
+          if [ -f "$csv_file" ]; then
+            python ./code/DWLqC.py -s "$csv_file" -o "./data/${sub}/${run_part}" -sub "$sub" | tee "$log_file"
+            echo "QC for ${sub}_${task}_${vers} completed"
+          else
+            echo "CSV file $csv_file does not exist"
+          fi
+
+      - name: Upload QC Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: qc-results-${{ matrix.config.sub }}-${{ matrix.config.task }}-${{ matrix.config.version }}-${{ matrix.config.run_part }}
+          path: |
+            ./data/${{ matrix.config.sub }}/${{ matrix.config.run_part }}/*.png
+            ./data/${{ matrix.config.sub }}/${{ matrix.config.run_part }}/*.log
+
+
+  commit_results:
+    name: Commit and Push QC Results
+    runs-on: self-hosted
+    needs: run_qc
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./
+
+      - name: Move QC Results
+        run: |
+          echo "Moving QC results to data directory..."
+          for dir in qc-results-*; do
+            echo "Processing artifact directory: $dir"
+            # Extract sub, task, version, and run_part from the directory name
+            IFS='-' read -r _ _ sub task version run_part <<< "$dir"
+            echo "Subject: $sub, Task: $task, Version: $version, Run Part: $run_part"
+            # Define the target directories
+            run_part_dir="./data/${sub}/${run_part}"
+            # Create the target directories if they don't exist
+            mkdir -p "$run_part_dir"
+            # Move .png files to the processed directory
+            mv "$dir"/*.png "$run_part_dir/" 2>/dev/null || :
+            # Move .log files to the run_part directory
+            mv "$dir"/*.log "$run_part_dir/" 2>/dev/null || :
           done
-
 
       - name: Commit and Push QC Results
         run: |
           git config --global user.name "miloswrath"
           git config --global user.email "miloswrath@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
-          git add ./data/*/*/*.png
+          git add ./data/*/*/*.png ./data/*/*/*.log
           git commit -m "Add QC results for subjects $(date +%Y-%m-%d)"
           git push origin main  
 
@@ -147,12 +196,10 @@ jobs:
           find ./data -type d
           find ./data -type f
 
-
-
   add:
     name: Generate Jekyll Posts and Deploy
     runs-on: ubuntu-latest
-    needs: [process_raw, run_qc]
+    needs: [process_raw, run_qc, commit_results]
 
     steps:
       # 1. Checkout the Repository
