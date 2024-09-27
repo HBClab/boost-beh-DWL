@@ -182,7 +182,7 @@ def main():
     qc(submission)
     
     print(f'QC passed for {submission}, generating plots...')
-    version = submission.split('_')[3]
+    version = submission.split('_')[2]
     print(version)
     # generate plots
     plots(submission, output, sub, version)
