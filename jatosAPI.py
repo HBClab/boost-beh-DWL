@@ -49,7 +49,7 @@ def get_met(tease):
 
     # Get the current timestamp
     current_time = datetime.now().timestamp() * 1000  # Convert to milliseconds
-    one_day_ago = current_time - (24 * 60 * 60 * 1000)  # 24 hours ago in milliseconds
+    one_day_ago = current_time - 35 * (24 * 60 * 60 * 1000)  # 24 hours ago in milliseconds
 
     # Initialize an empty list to store study result IDs
     study_result_ids = []
@@ -142,53 +142,54 @@ def get_data(study_result_ids, tease):
 
     return txt_files
 
+def get_next_run_dir(sub):
+    base_dir = f'./data/{sub}/processed'
+    i = 1
+    while os.path.exists(os.path.join(base_dir, f'run-{i}')):
+        i += 1
+    return os.path.join(base_dir, f'run-{i}')
+
 def convert_beh():
-
-
-    txt = []
+    txt_files = []
     for root, dirs, files in os.walk('./data/raw'):
         for file in files:
             if file.endswith(".txt"):
-                txt.append(os.path.join(root, file))
-    print(txt)
+                txt_files.append(os.path.join(root, file))
+    print(f"Found text files: {txt_files}")
             
-    count = 0
     dic = {}
-    for b in txt:
-        count += 1
+    for idx, b in enumerate(txt_files, start=1):
         tweets = []
         with open(b, 'r') as file:
             for line in file:
                 tweets.append(json.loads(line))
-        dic[count]= pd.json_normalize(tweets,'data')
+        dic[idx] = pd.json_normalize(tweets, 'data')
 
-    print(dic)
+    print("Data dictionaries created.")
 
+    all_paths = []
+    for i in dic:
+        df = dic[i]
+        for sub in np.unique(df['subject_id']):
+            print(f"Processing subject: {sub}")
+            # Filter data for this subject
+            sub_df = df[df['subject_id'] == sub]
 
+            # Get next run directory
+            run_dir = get_next_run_dir(sub)
+            os.makedirs(run_dir, exist_ok=True)
 
-    paths = []
-    print(dic)
-    for i in range(len(dic)):
-        i += 1
-        for sub in np.unique(dic[i]['subject_id']):
-            print(sub)
-            if os.path.exists(f'./data/{sub}/processed/run-1'):
-                paths.append((f'./data/{sub}/processed/run-2'+"/{0}_{1}_{2}"+".csv").format(sub,dic[i]['task'][0],dic[i]['task_vers'][0]))
-            elif os.path.exists(f'./data/{sub}/processed/run-2'):
-                paths.append((f'./data/{sub}/processed/run-1'+"/{0}_{1}_{2}"+".csv").format(sub,dic[i]['task'][0],dic[i]['task_vers'][0]))
-            else:
-                paths.append((f'./data/{sub}/processed/run-1'+"/{0}_{1}_{2}"+".csv").format(sub,dic[i]['task'][0],dic[i]['task_vers'][0]))
-            
+            # Build the CSV file path
+            csv_filename = f"{sub}_{sub_df['task'].iloc[0]}_{sub_df['task_vers'].iloc[0]}.csv"
+            csv_path = os.path.join(run_dir, csv_filename)
 
+            # Save CSV
+            sub_df.to_csv(csv_path, index=False)
+            print(f"Saved {csv_path}")
 
-        for path in paths:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            dic[i].to_csv(path, index=False)
-            print(f"saved {path}")
+            all_paths.append(csv_path)
 
-
-
-    return paths
+    return all_paths
 
 def move_txt(txt_files):
     dic = {}
