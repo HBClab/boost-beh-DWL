@@ -252,8 +252,12 @@ jobs:
           declare -A subjects
       
           # Get the list of PNG files added in the latest commit
-          images=$(git diff --name-only HEAD~1 HEAD | grep '\.png$')
-          echo "Images: $images"
+          images=$(git diff --name-only HEAD~1 HEAD | grep '\.png$' || true)
+          echo "Images: $images"          
+          if [ -z "$images" ]; then
+              echo "No new images found. Skipping post generation."
+              exit 0
+          fi
       
           # Iterate over each PNG file and group them by subject number
           for file in $images; do
