@@ -30,7 +30,7 @@ jobs:
           #!/bin/bash
 
           # Get the list of CSV files changed in the last 24 hours
-          data=$(git log --since="24 hours ago" --name-only --pretty=format: -- '*.csv' | sort | uniq)
+          data=$(git log --since="24 hours ago" --name-only --diff-filter=A --pretty=format: -- '*.csv' | sort | uniq)
 
           # Convert the list into a multi-line format
           formatted_data=$(echo "$data" | tr ' ' '\n')
