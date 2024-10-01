@@ -20,17 +20,19 @@ jobs:
     runs-on: self-hosted
     outputs:
       data: ${{ steps.set_vars.outputs.json }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
+        with:
+            fetch-depth: 0
       - name: Get Changed CSV Files
         run: |
           #!/bin/bash
+         
+
 
           # Get the list of CSV files changed in the last 24 hours
-          data=$(git log --since="24 hours ago" --name-only --diff-filter=A --pretty=format: -- '*.csv' | sort | uniq)
+          data=$(git log --since="24 hours ago" --name-only --pretty=format: -- '*.csv' | sort | uniq)
 
           # Convert the list into a multi-line format
           formatted_data=$(echo "$data" | tr ' ' '\n')
