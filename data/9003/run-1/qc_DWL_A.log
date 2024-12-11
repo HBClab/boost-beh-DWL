@@ -1,0 +1,6 @@
+All QC checks passed.
+QC passed for ./data/9003/processed/run-1/9003_DWL_A.csv, generating plots...
+A.csv
+['book', 'finger', 'meadow', 'gold', 'rug', 'key', 'flower', 'harp', 'finger', 'apple', 'salt', 'chimney', 'button', 'train', 'key']
+['book', 'flower', 'train', 'rug', 'meadow', 'harp', 'salt', 'finger', 'apple', 'log', 'button', 'key', 'gold', 'rattle']
+Plots generated
